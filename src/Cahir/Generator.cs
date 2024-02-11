@@ -55,7 +55,7 @@ public static class Generator
     {
         Span<byte> ciphertext = stackalloc byte[sitePassword.Length * Constants.UInt128Size];
         ciphertext.Clear();
-        ReadOnlySpan<byte> nonce = "cahir.pm.xof"u8;
+        ReadOnlySpan<byte> nonce = "cahir.sitepw"u8;
         crypto_chacha20_ietf(ciphertext, ciphertext, siteKey, nonce, ctr: 0);
         var characterSet = new List<char>();
         if (lowercase) { characterSet.AddRange("abcdefghijklmnopqrstuvwxyz"); }
