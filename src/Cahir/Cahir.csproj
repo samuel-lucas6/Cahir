@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <PublishSelfContained>true</PublishSelfContained>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishReadyToRun>true</PublishReadyToRun>
+        <PublishTrimmed>true</PublishTrimmed>
+        <PublishAot>false</PublishAot>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+        <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
+        <PublishReadyToRunShowWarnings>true</PublishReadyToRunShowWarnings>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AssemblyName>cahir</AssemblyName>
+        <ApplicationIcon>cahir.ico</ApplicationIcon>
+        <Version>1.0.0</Version>
+        <Authors>Samuel Lucas</Authors>
+        <Product>Cahir</Product>
+        <Description>A deterministic password manager.</Description>
+        <Copyright>Copyright (C) 2024 Samuel Lucas</Copyright>
+        <RepositoryUrl>https://github.com/samuel-lucas6/Cahir</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>GPLv3</PackageLicenseExpression>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Monocypher" Version="0.4.0" />
+      <PackageReference Include="Spectre.Console" Version="0.48.0" />
+      <PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="wordlist.txt" />
+      <EmbeddedResource Include="wordlist.txt" />
+      <EmbeddedResource Update="Resources.resx">
+        <Generator>ResXFileCodeGenerator</Generator>
+        <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Resources.Designer.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>Resources.resx</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>
