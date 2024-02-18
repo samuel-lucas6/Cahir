@@ -13,6 +13,13 @@ public static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
         var app = new CommandApp<CahirCommand>();
+        app.Configure(config =>
+        {
+            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\"");
+            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -p \"correct horse battery staple\"");
+            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -f \"password.txt\"");
+            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -k \"pepper.key\"");
+        });
         return app.Run(args);
     }
 }
