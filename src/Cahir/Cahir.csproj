@@ -28,7 +28,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Monocypher" Version="0.4.0" />
+      <PackageReference Include="Monocypher" Version="0.4.1" />
       <PackageReference Include="Spectre.Console" Version="0.48.0" />
       <PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
     </ItemGroup>
