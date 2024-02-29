@@ -15,10 +15,10 @@ public static class Program
         var app = new CommandApp<CahirCommand>();
         app.Configure(config =>
         {
-            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\"");
-            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -p \"correct horse battery staple\"");
-            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -f \"password.txt\"");
-            config.AddExample("-i \"Samuel Lucas\" -d \"https://github.com\" -k \"pepper.key\"");
+            config.AddExample("-i \"alicejones@pm.me\" -d \"https://github.com\"");
+            config.AddExample("-i \"alicejones@pm.me\" -d \"https://github.com\" -p \"correct horse battery staple\"");
+            config.AddExample("-i \"+44 07488 855302\" -d \"https://github.com\" -f \"password.txt\"");
+            config.AddExample("-i \"+44 07488 855302\" -d \"https://github.com\" -k \"pepper.key\"");
         });
         return app.Run(args);
     }
@@ -29,7 +29,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
     public sealed class Settings : CommandSettings
     {
         [CommandOption("-i|--identity <IDENTITY>")]
-        [Description("Your unique identifier (e.g. full name, username, phone number)")]
+        [Description("Your unique identifier (e.g. email address)")]
         public string? Identity { get; set; }
 
         [CommandOption("-d|--domain <DOMAIN>")]
