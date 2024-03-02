@@ -8,9 +8,15 @@ A deterministic password manager.
 USAGE:
     cahir [OPTIONS]
 
+EXAMPLES:
+    cahir -i "alicejones@pm.me" -d "https://github.com"
+    cahir -i "alicejones@pm.me" -d "https://github.com" -p "correct horse battery staple"
+    cahir -i "+44 07488 855302" -d "https://github.com" -f "password.txt"
+    cahir -i "+44 07488 855302" -d "https://github.com" -k "pepper.key"
+
 OPTIONS:
                                   DEFAULT
-    -i, --identity <IDENTITY>                Your unique identifier (e.g. full name, username, phone number)
+    -i, --identity <IDENTITY>                Your unique identifier (e.g. email address)
     -d, --domain <DOMAIN>                    The website URL (e.g. https://github.com)
     -p, --password <PASSWORD>                Your master password (omit for interactive entry)
     -f, --password-file <FILE>               Your master password stored as a file (omit for interactive entry)
