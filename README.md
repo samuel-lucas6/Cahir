@@ -28,6 +28,7 @@ OPTIONS:
     -u, --uppercase                          Include uppercase characters in the derived site password
     -n, --numbers                            Include numbers in the derived site password
     -s, --symbols                            Include symbols in the derived site password
+    -w, --words                              Derive a passphrase
     -v, --version                            Prints version information
     -h, --help                               Prints help information
 ```
