@@ -68,4 +68,41 @@ public static class Generator
         }
         crypto_wipe(ciphertext);
     }
+
+    public static void DeriveSitePassphrase(Span<char> sitePassphrase, ReadOnlySpan<byte> siteKey, int wordCount, bool capitalise, bool number, bool symbol)
+    {
+        // If number == true, randomly generate a number and position
+        int offset = number ? 2 : 0;
+        Span<byte> ciphertext = stackalloc byte[(wordCount + offset) * Constants.UInt128Size];
+        ciphertext.Clear();
+        ReadOnlySpan<byte> nonce = "cahir.sitepw"u8;
+        crypto_chacha20_ietf(ciphertext, ciphertext, siteKey, nonce, ctr: 0);
+
+        ReadOnlySpan<char> characterSet = "0123456789";
+        UInt128 randomNumber = 0, randomPosition = 0;
+        if (number) {
+            randomNumber = BinaryPrimitives.ReadUInt128LittleEndian(ciphertext[..Constants.UInt128Size]) % (UInt128)characterSet.Length;
+            randomPosition = BinaryPrimitives.ReadUInt128LittleEndian(ciphertext.Slice(Constants.UInt128Size, Constants.UInt128Size)) % (UInt128)wordCount;
+        }
+
+        int count = 0;
+        string[] wordlist = Resources.wordlist.Split(separator: ["\n"], StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < wordCount; i++) {
+            var randomIndex = BinaryPrimitives.ReadUInt128LittleEndian(ciphertext.Slice((i + offset) * Constants.UInt128Size, Constants.UInt128Size)) % (UInt128)wordlist.Length;
+            ReadOnlySpan<char> word = wordlist[(int)randomIndex].AsSpan();
+            for (int j = 0; j < word.Length; j++) {
+                sitePassphrase[count] = capitalise && j == 0 ? char.ToUpper(word[j]) : word[j];
+                count++;
+            }
+            if (number && i == (int)randomPosition) {
+                sitePassphrase[count] = characterSet[(int)randomNumber];
+                count++;
+            }
+            if (i != wordCount - 1) {
+                sitePassphrase[count] = symbol ? '-' : ' ';
+                count++;
+            }
+        }
+        crypto_wipe(ciphertext);
+    }
 }

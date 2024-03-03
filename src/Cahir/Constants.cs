@@ -5,7 +5,10 @@ public static class Constants
     public const int MaxPasswordChars = 128;
     public const int DefaultCounter = 1;
     public const int DefaultLength = 20;
+    public const int DefaultWords = 8;
     public const int MaxLength = 128;
+    public const int MaxWords = 12;
+    public const int LongestWordLength = 8;
     public const int KeySize = 32;
     public const int FingerprintSize = 64;
     public const int SaltSize = 32;

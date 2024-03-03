@@ -77,6 +77,10 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         [CommandOption("-s|--symbols")]
         [Description("Include symbols in the derived site password")]
         public bool Symbols { get; set; }
+
+        [CommandOption("-w|--words")]
+        [Description("Derive a passphrase")]
+        public bool Words { get; set; }
     }
 
     public override ValidationResult Validate(CommandContext context, Settings settings)
@@ -94,7 +98,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             }
             if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
                 settings.Keyfile != null || settings.Counter != Constants.DefaultCounter || settings.Length != Constants.DefaultLength ||
-                settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols) {
+                settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
                 return ValidationResult.Error("-g|--generate <FILE> must be specified without other options.");
             }
             return ValidationResult.Success();
@@ -147,10 +151,19 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         if (settings.Counter <= 0) {
             return ValidationResult.Error("-c|--counter <COUNTER> must be greater than 0.");
         }
-        if (settings.Length is <= 0 or > Constants.MaxLength) {
-            return ValidationResult.Error($"-l|--length <LENGTH> must be greater than 0 and at most {Constants.MaxLength}.");
+        if (settings is { Words: false, Length: <= 0 or > Constants.MaxLength }) {
+            return ValidationResult.Error($"-l|--length <LENGTH> must be greater than 0 and at most {Constants.MaxLength} for a password.");
         }
-        if (settings is { Lowercase: false, Uppercase: false, Numbers: false, Symbols: false }) {
+        if (settings is { Words: true, Length: Constants.DefaultLength }) {
+            settings.Length = Constants.DefaultWords;
+        }
+        if (settings is { Words: true, Length: <= 0 or > Constants.MaxWords }) {
+            return ValidationResult.Error($"-l|--length <LENGTH> must be greater than 0 and at most {Constants.MaxWords} for a passphrase.");
+        }
+        if (settings is { Words: true, Lowercase: true }) {
+            return ValidationResult.Error("-a|--lowercase cannot be used with -w|--words.");
+        }
+        if (settings is { Words: false, Lowercase: false, Uppercase: false, Numbers: false, Symbols: false }) {
             settings.Lowercase = true;
             settings.Uppercase = true;
             settings.Numbers = true;
@@ -203,9 +216,14 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Generator.DeriveSiteKey(siteKey, masterKey, domain, counter);
         crypto_wipe(masterKey);
 
-        Span<char> sitePassword = stackalloc char[settings.Length];
+        Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length : (settings.Length * Constants.LongestWordLength) + settings.Length];
         fixed (char* s = sitePassword) {
-            Generator.DeriveSitePassword(sitePassword, siteKey, settings.Lowercase, settings.Uppercase, settings.Numbers, settings.Symbols);
+            if (!settings.Words) {
+                Generator.DeriveSitePassword(sitePassword, siteKey, settings.Lowercase, settings.Uppercase, settings.Numbers, settings.Symbols);
+            }
+            else {
+                Generator.DeriveSitePassphrase(sitePassword, siteKey, settings.Length, settings.Uppercase, settings.Numbers, settings.Symbols);
+            }
             crypto_wipe(siteKey);
             Console.WriteLine();
             AnsiConsole.MarkupLine("[green3_1]-----BEGIN SITE PASSWORD-----[/]");
