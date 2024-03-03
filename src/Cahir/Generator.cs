@@ -41,12 +41,14 @@ public static class Generator
         }
     }
 
-    public static void DeriveSiteKey(Span<byte> siteKey, ReadOnlySpan<byte> masterKey, ReadOnlySpan<byte> domain, ReadOnlySpan<byte> counter)
+    public static void DeriveSiteKey(Span<byte> siteKey, ReadOnlySpan<byte> masterKey, ReadOnlySpan<byte> domain, ReadOnlySpan<byte> counter, ReadOnlySpan<byte> length, ReadOnlySpan<byte> characterSet)
     {
         var ctx = new crypto_blake2b_ctx();
         crypto_blake2b_keyed_init(ref ctx, siteKey.Length, masterKey);
         crypto_blake2b_update(ref ctx, "cahir.sitekey"u8);
         crypto_blake2b_update(ref ctx, counter);
+        crypto_blake2b_update(ref ctx, length);
+        crypto_blake2b_update(ref ctx, characterSet);
         crypto_blake2b_update(ref ctx, domain);
         crypto_blake2b_final(ref ctx, siteKey);
     }

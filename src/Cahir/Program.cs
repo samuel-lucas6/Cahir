@@ -201,6 +201,14 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             passwordLength = PasswordEntry.GetPassword(passwordBuffer);
         }
         Span<byte> password = passwordBuffer[..passwordLength];
+        Span<byte> length = stackalloc byte[sizeof(uint)];
+        BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length);
+        Span<byte> characterSet = stackalloc byte[5];
+        characterSet[0] = (byte)(settings.Lowercase ? 0x01 : 0x00);
+        characterSet[1] = (byte)(settings.Uppercase ? 0x01 : 0x00);
+        characterSet[2] = (byte)(settings.Numbers ? 0x01 : 0x00);
+        characterSet[3] = (byte)(settings.Symbols ? 0x01 : 0x00);
+        characterSet[4] = (byte)(settings.Words ? 0x01 : 0x00);
         Span<byte> counter = stackalloc byte[sizeof(uint)];
         BinaryPrimitives.WriteUInt32LittleEndian(counter, (uint)settings.Counter);
         Span<byte> pepper = stackalloc byte[Constants.KeySize];
@@ -213,7 +221,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         crypto_wipe(password);
         crypto_wipe(pepper);
 
-        Generator.DeriveSiteKey(siteKey, masterKey, domain, counter);
+        Generator.DeriveSiteKey(siteKey, masterKey, domain, counter, length, characterSet);
         crypto_wipe(masterKey);
 
         Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length : (settings.Length * Constants.LongestWordLength) + settings.Length];
