@@ -183,9 +183,9 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         }
 
         Span<byte> masterKey = stackalloc byte[Constants.KeySize], siteKey = stackalloc byte[Constants.KeySize];
-        Span<byte> identity = Encoding.UTF8.GetBytes(settings.Identity);
-        Span<byte> domain = Encoding.UTF8.GetBytes(new Uri(settings.Domain).Host);
-        Span<byte> passwordBuffer = GC.AllocateArray<byte>(Encoding.UTF8.GetMaxByteCount(settings.Password == null ? Constants.MaxPasswordChars : settings.Password.Length), pinned: true);
+        Span<byte> identity = Encoding.UTF8.GetBytes(settings.Identity!);
+        Span<byte> domain = Encoding.UTF8.GetBytes(new Uri(settings.Domain!).Host);
+        Span<byte> passwordBuffer = GC.AllocateArray<byte>(Encoding.UTF8.GetMaxByteCount(settings.Password?.Length ?? Constants.MaxPasswordChars), pinned: true);
         int passwordLength;
         if (settings.PasswordFile != null) {
             passwordLength = PasswordEntry.ReadPasswordFile(passwordBuffer, settings.PasswordFile);
