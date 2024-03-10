@@ -54,13 +54,11 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
 
         [CommandOption("-c|--counter <COUNTER>")]
         [Description("The counter for when a site password needs to be changed")]
-        [DefaultValue(Constants.DefaultCounter)]
-        public int Counter { get; set; }
+        public int Counter { get; set; } = Constants.DefaultCounter;
 
         [CommandOption("-l|--length <LENGTH>")]
         [Description("The length of the derived site password")]
-        [DefaultValue(Constants.DefaultLength)]
-        public int Length { get; set; }
+        public int? Length { get; set; }
 
         [CommandOption("-a|--lowercase")]
         [Description("Include lowercase characters in the derived site password")]
@@ -151,11 +149,14 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         if (settings.Counter <= 0) {
             return ValidationResult.Error("-c|--counter <COUNTER> must be greater than 0.");
         }
+        if (settings is { Words: false, Length: null }) {
+            settings.Length = Constants.DefaultLength;
+        }
+        if (settings is { Words: true, Length: null }) {
+            settings.Length = Constants.DefaultWords;
+        }
         if (settings is { Words: false, Length: <= 0 or > Constants.MaxLength }) {
             return ValidationResult.Error($"-l|--length <LENGTH> must be greater than 0 and at most {Constants.MaxLength} for a password.");
-        }
-        if (settings is { Words: true, Length: Constants.DefaultLength }) {
-            settings.Length = Constants.DefaultWords;
         }
         if (settings is { Words: true, Length: <= 0 or > Constants.MaxWords }) {
             return ValidationResult.Error($"-l|--length <LENGTH> must be greater than 0 and at most {Constants.MaxWords} for a passphrase.");
@@ -202,7 +203,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         }
         Span<byte> password = passwordBuffer[..passwordLength];
         Span<byte> length = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length);
+        BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length!.Value);
         Span<byte> characterSet = stackalloc byte[5];
         characterSet[0] = (byte)(settings.Lowercase ? 0x01 : 0x00);
         characterSet[1] = (byte)(settings.Uppercase ? 0x01 : 0x00);
@@ -224,13 +225,13 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Generator.DeriveSiteKey(siteKey, masterKey, domain, counter, length, characterSet);
         crypto_wipe(masterKey);
 
-        Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length : (settings.Length * Constants.LongestWordLength) + settings.Length];
+        Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length.Value : (settings.Length.Value * Constants.LongestWordLength) + settings.Length.Value];
         fixed (char* s = sitePassword) {
             if (!settings.Words) {
                 Generator.DeriveSitePassword(sitePassword, siteKey, settings.Lowercase, settings.Uppercase, settings.Numbers, settings.Symbols);
             }
             else {
-                Generator.DeriveSitePassphrase(sitePassword, siteKey, settings.Length, settings.Uppercase, settings.Numbers, settings.Symbols);
+                Generator.DeriveSitePassphrase(sitePassword, siteKey, settings.Length.Value, settings.Uppercase, settings.Numbers, settings.Symbols);
             }
             crypto_wipe(siteKey);
             Console.WriteLine();
