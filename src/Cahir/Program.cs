@@ -225,6 +225,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Generator.DeriveSiteKey(siteKey, masterKey, domain, counter, length, characterSet);
         crypto_wipe(masterKey);
 
+        // + settings.Length.Value for the word separator chars and a number
         Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length.Value : (settings.Length.Value * Constants.LongestWordLength) + settings.Length.Value];
         fixed (char* s = sitePassword) {
             if (!settings.Words) {
