@@ -15,10 +15,10 @@ public static class Program
         var app = new CommandApp<CahirCommand>();
         app.Configure(config =>
         {
-            config.AddExample("-i \"alicejones@pm.me\" -d \"https://github.com\"");
-            config.AddExample("-i \"alicejones@pm.me\" -d \"https://github.com\" -p \"correct horse battery staple\"");
-            config.AddExample("-i \"+44 07488 855302\" -d \"https://github.com\" -f \"password.txt\"");
-            config.AddExample("-i \"+44 07488 855302\" -d \"https://github.com\" -k \"pepper.key\"");
+            config.AddExample("-i \"alicejones@pm.me\" -d \"github.com\"");
+            config.AddExample("-i \"alicejones@pm.me\" -d \"github.com\" -p \"correct horse battery staple\"");
+            config.AddExample("-i \"+44 07488 855302\" -d \"github.com\" -f \"password.txt\"");
+            config.AddExample("-i \"+44 07488 855302\" -d \"github.com\" -k \"pepper.key\"");
         });
         return app.Run(args);
     }
@@ -33,7 +33,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         public string? Identity { get; set; }
 
         [CommandOption("-d|--domain <DOMAIN>")]
-        [Description("The website URL (e.g. https://github.com)")]
+        [Description("The website domain (e.g. github.com)")]
         public string? Domain { get; set; }
 
         [CommandOption("-p|--password <PASSWORD>")]
@@ -106,9 +106,6 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         }
         if (string.IsNullOrWhiteSpace(settings.Domain)) {
             return ValidationResult.Error("-d|--domain <DOMAIN> must be specified.");
-        }
-        if (!Uri.IsWellFormedUriString(settings.Domain, UriKind.Absolute)) {
-            return ValidationResult.Error("-d|--domain <DOMAIN> must be a proper URL.");
         }
         if (settings.Password is { Length: > Constants.MaxPasswordChars }) {
             return ValidationResult.Error($"The password must be at most {Constants.MaxPasswordChars} characters long.");
@@ -184,7 +181,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
 
         Span<byte> masterKey = stackalloc byte[Constants.KeySize], siteKey = stackalloc byte[Constants.KeySize];
         Span<byte> identity = Encoding.UTF8.GetBytes(settings.Identity!);
-        Span<byte> domain = Encoding.UTF8.GetBytes(new Uri(settings.Domain!).Host);
+        Span<byte> domain = Encoding.UTF8.GetBytes(settings.Domain!);
         Span<byte> passwordBuffer = GC.AllocateArray<byte>(Encoding.UTF8.GetMaxByteCount(settings.Password?.Length ?? Constants.MaxPasswordChars), pinned: true);
         int passwordLength;
         if (settings.PasswordFile != null) {
