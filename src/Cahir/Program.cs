@@ -53,11 +53,11 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         public string? Generate { get; set; }
 
         [CommandOption("-c|--counter <COUNTER>")]
-        [Description("The counter for when a site password needs to be changed")]
+        [Description("The counter for when a site password needs to be changed (default is 1)")]
         public int Counter { get; set; } = Constants.DefaultCounter;
 
         [CommandOption("-l|--length <LENGTH>")]
-        [Description("The length of the derived site password")]
+        [Description("The length of the derived site password (default is 20 characters or 8 words)")]
         public int? Length { get; set; }
 
         [CommandOption("-a|--lowercase")]
