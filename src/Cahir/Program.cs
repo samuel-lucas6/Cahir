@@ -54,7 +54,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
 
         [CommandOption("-c|--counter <COUNTER>")]
         [Description("The counter for when a site password needs to be changed (default is 1)")]
-        public int Counter { get; set; } = Constants.DefaultCounter;
+        public int? Counter { get; set; }
 
         [CommandOption("-l|--length <LENGTH>")]
         [Description("The length of the derived site password (default is 20 characters or 8 words)")]
@@ -95,7 +95,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 return ValidationResult.Error("-g|--generate <FILE> must specify a valid file name.");
             }
             if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
-                settings.Keyfile != null || settings.Counter != Constants.DefaultCounter || settings.Length != Constants.DefaultLength ||
+                settings.Keyfile != null || settings.Counter != null || settings.Length != null ||
                 settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
                 return ValidationResult.Error("-g|--generate <FILE> must be specified without other options.");
             }
@@ -143,6 +143,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 return ValidationResult.Error("Unable to access the keyfile.");
             }
         }
+        settings.Counter ??= Constants.DefaultCounter;
         if (settings.Counter <= 0) {
             return ValidationResult.Error("-c|--counter <COUNTER> must be greater than 0.");
         }
@@ -200,7 +201,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         }
         Span<byte> password = passwordBuffer[..passwordLength];
         Span<byte> length = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length!.Value);
+        BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length!);
         Span<byte> characterSet = stackalloc byte[5];
         characterSet[0] = (byte)(settings.Lowercase ? 0x01 : 0x00);
         characterSet[1] = (byte)(settings.Uppercase ? 0x01 : 0x00);
@@ -208,7 +209,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         characterSet[3] = (byte)(settings.Symbols ? 0x01 : 0x00);
         characterSet[4] = (byte)(settings.Words ? 0x01 : 0x00);
         Span<byte> counter = stackalloc byte[sizeof(uint)];
-        BinaryPrimitives.WriteUInt32LittleEndian(counter, (uint)settings.Counter);
+        BinaryPrimitives.WriteUInt32LittleEndian(counter, (uint)settings.Counter!);
         Span<byte> pepper = stackalloc byte[Constants.KeySize];
         if (settings.Keyfile != null) {
             Keyfile.ReadKeyfile(pepper, settings.Keyfile);
