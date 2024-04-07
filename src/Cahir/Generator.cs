@@ -5,7 +5,7 @@ namespace Cahir;
 
 public static class Generator
 {
-    public static unsafe void DeriveMasterKey(Span<byte> masterKey, ReadOnlySpan<byte> identity, ReadOnlySpan<byte> password, ReadOnlySpan<byte> pepper)
+    public static unsafe void DeriveMasterKey(Span<byte> masterKey, ReadOnlySpan<byte> identity, ReadOnlySpan<byte> password)
     {
         Span<byte> salt = stackalloc byte[Constants.SaltSize];
         var ctx = new crypto_blake2b_ctx();
@@ -15,7 +15,7 @@ public static class Generator
         crypto_blake2b_final(ref ctx, salt);
 
         Span<byte> workArea = new byte[Constants.Argon2MemorySize];
-        fixed (byte* p = password, s = salt, k = pepper) {
+        fixed (byte* p = password, s = salt) {
             var config = new crypto_argon2_config
             {
                 algorithm = Constants.CRYPTO_ARGON2_ID,
@@ -32,13 +32,25 @@ public static class Generator
             };
             var extras = new crypto_argon2_extras
             {
-                key = pepper.Length == 0 ? IntPtr.Zero : new IntPtr(k),
-                key_size = (uint)pepper.Length,
+                key = IntPtr.Zero,
+                key_size = 0,
                 ad = IntPtr.Zero,
                 ad_size = 0
             };
             crypto_argon2(masterKey, workArea, config, inputs, extras);
         }
+    }
+
+    public static void DeriveChallenge(Span<byte> challenge, ReadOnlySpan<byte> masterKey, ReadOnlySpan<byte> domain, ReadOnlySpan<byte> counter, ReadOnlySpan<byte> length, ReadOnlySpan<byte> characterSet)
+    {
+        var ctx = new crypto_blake2b_ctx();
+        crypto_blake2b_keyed_init(ref ctx, challenge.Length, masterKey);
+        crypto_blake2b_update(ref ctx, "cahir.challenge"u8);
+        crypto_blake2b_update(ref ctx, counter);
+        crypto_blake2b_update(ref ctx, length);
+        crypto_blake2b_update(ref ctx, characterSet);
+        crypto_blake2b_update(ref ctx, domain);
+        crypto_blake2b_final(ref ctx, challenge);
     }
 
     public static void DeriveSiteKey(Span<byte> siteKey, ReadOnlySpan<byte> masterKey, ReadOnlySpan<byte> domain, ReadOnlySpan<byte> counter, ReadOnlySpan<byte> length, ReadOnlySpan<byte> characterSet)

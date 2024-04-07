@@ -1,4 +1,5 @@
-﻿using static Monocypher.Monocypher;
+﻿using Yubico.YubiKey.Otp.Operations;
+using static Monocypher.Monocypher;
 using System.Buffers.Binary;
 using System.ComponentModel;
 using Spectre.Console.Cli;
@@ -52,6 +53,14 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         [Description("Randomly generate a keyfile with the specified file name")]
         public string? Generate { get; set; }
 
+        [CommandOption("-y|--yubikey")]
+        [Description("Use your YubiKey for challenge-response")]
+        public bool YubiKey { get; set; }
+
+        [CommandOption("-m|--modify-slot")]
+        [Description("Set up a challenge-response YubiKey slot")]
+        public bool ModifySlot { get; set; }
+
         [CommandOption("-c|--counter <COUNTER>")]
         [Description("The counter for when a site password needs to be changed (default is 1)")]
         public int? Counter { get; set; }
@@ -95,9 +104,17 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 return ValidationResult.Error("-g|--generate <FILE> must specify a valid file name.");
             }
             if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
-                settings.Keyfile != null || settings.Counter != null || settings.Length != null ||
+                settings.Keyfile != null || settings.YubiKey || settings.ModifySlot || settings.Counter != null || settings.Length != null ||
                 settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
                 return ValidationResult.Error("-g|--generate <FILE> must be specified without other options.");
+            }
+            return ValidationResult.Success();
+        }
+        if (settings.ModifySlot) {
+            if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
+                settings.Keyfile != null || settings.YubiKey || settings.Generate != null || settings.Counter != null || settings.Length != null ||
+                settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
+                return ValidationResult.Error("-m|--modify-slot must be specified without other options.");
             }
             return ValidationResult.Success();
         }
@@ -131,6 +148,9 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             }
         }
         if (settings.Keyfile != null) {
+            if (settings.YubiKey) {
+                return ValidationResult.Error("-k|--keyfile <FILE> cannot be used alongside -y|--yubikey.");
+            }
             if (!File.Exists(settings.Keyfile)) {
                 return ValidationResult.Error("The keyfile doesn't exist.");
             }
@@ -179,8 +199,14 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             AnsiConsole.MarkupLine("[green3_1]Keyfile generated successfully.[/]");
             return Environment.ExitCode;
         }
+        if (settings.ModifySlot) {
+            YubiKey.ConfigureSlot();
+            AnsiConsole.MarkupLine("[green3_1]Challenge-response slot configured successfully.[/]");
+            return Environment.ExitCode;
+        }
 
-        Span<byte> masterKey = stackalloc byte[Constants.KeySize], siteKey = stackalloc byte[Constants.KeySize];
+        Span<byte> masterKeyAndPepper = stackalloc byte[Constants.KeySize * 2], masterKey = masterKeyAndPepper[..Constants.KeySize], pepper = masterKeyAndPepper[Constants.KeySize..];
+        Span<byte> siteKey = stackalloc byte[Constants.KeySize];
         Span<byte> identity = Encoding.UTF8.GetBytes(settings.Identity!);
         Span<byte> domain = Encoding.UTF8.GetBytes(settings.Domain!);
         Span<byte> passwordBuffer = GC.AllocateArray<byte>(Encoding.UTF8.GetMaxByteCount(settings.Password?.Length ?? Constants.MaxPasswordChars), pinned: true);
@@ -210,18 +236,24 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         characterSet[4] = (byte)(settings.Words ? 0x01 : 0x00);
         Span<byte> counter = stackalloc byte[sizeof(uint)];
         BinaryPrimitives.WriteUInt32LittleEndian(counter, (uint)settings.Counter!);
-        Span<byte> pepper = stackalloc byte[Constants.KeySize];
         if (settings.Keyfile != null) {
             Keyfile.ReadKeyfile(pepper, settings.Keyfile);
         }
 
         AnsiConsole.MarkupLine("[darkorange3_1]Deriving keys from master password...[/]");
-        Generator.DeriveMasterKey(masterKey, identity, password, settings.Keyfile != null ? pepper : ReadOnlySpan<byte>.Empty);
+        Generator.DeriveMasterKey(masterKey, identity, password);
         crypto_wipe(password);
-        crypto_wipe(pepper);
 
-        Generator.DeriveSiteKey(siteKey, masterKey, domain, counter, length, characterSet);
-        crypto_wipe(masterKey);
+        if (settings.YubiKey) {
+            AnsiConsole.MarkupLine("[darkorange3_1]Performing YubiKey challenge-response...[/]");
+            var challenge = GC.AllocateArray<byte>(CalculateChallengeResponse.MaxHmacChallengeSize, pinned: true);
+            Generator.DeriveChallenge(challenge, masterKey, domain, counter, length, characterSet);
+            YubiKey.ChallengeResponse(pepper, challenge);
+            crypto_wipe(challenge);
+        }
+
+        Generator.DeriveSiteKey(siteKey, settings.Keyfile != null || settings.YubiKey ? masterKeyAndPepper : masterKey, domain, counter, length, characterSet);
+        crypto_wipe(masterKeyAndPepper);
 
         // + settings.Length.Value for the word separator chars and a number
         Span<char> sitePassword = stackalloc char[!settings.Words ? settings.Length.Value : (settings.Length.Value * Constants.LongestWordLength) + settings.Length.Value];

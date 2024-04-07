@@ -26,6 +26,7 @@ public static class PasswordEntry
                 }
                 else if (pressedKey.Key is ConsoleKey.Backspace or ConsoleKey.Delete && count > 0) {
                     count--;
+                    password[count] = '\0';
                 }
                 Fingerprint(passwordBuffer, password[..count], wordlist);
             } while (pressedKey.Key != ConsoleKey.Enter);
