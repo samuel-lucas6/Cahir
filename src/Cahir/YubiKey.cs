@@ -1,6 +1,7 @@
 ﻿using Yubico.YubiKey.Otp.Operations;
 using static Monocypher.Monocypher;
 using System.Security.Cryptography;
+using Yubico.Core.Iso7816;
 using Yubico.YubiKey.Otp;
 using Spectre.Console;
 using Yubico.YubiKey;
@@ -81,6 +82,7 @@ public static class YubiKey
                 response = session.CalculateChallengeResponse(Slot.ShortPress).UseYubiOtp(false).UseChallenge(challenge)
                     .UseTouchNotifier(() => Console.WriteLine("Touch your YubiKey.")).GetDataBytes();
             }
+
             // There seems to be no way to pin/wipe the response
             var ctx = new crypto_blake2b_ctx();
             crypto_blake2b_keyed_init(ref ctx, pepper.Length, response.Span);
@@ -92,6 +94,9 @@ public static class YubiKey
         }
         catch (MalformedYubiKeyResponseException ex) {
             throw new ArgumentException("You didn't press the YubiKey button.", ex);
+        }
+        catch (ApduException ex) {
+            throw new ArgumentException("The OTP interface is disabled on your YubiKey.", ex);
         }
     }
 
