@@ -96,8 +96,9 @@ masterKey = Argon2id(password, salt, memorySize, passes, parallelism)
 ### Pepper Derivation
 #### Keyfile
 ```
-pepper = BLAKE2b-256(keyfile)
+pepper = BLAKE2b-256(context || keyfile)
 ```
+- `context`: the UTF-8 encoding of `"cahir.keyfile"` (13 bytes).
 - `keyfile`: the bytes stored in the `-k, --keyfile` file (1+ bytes).
 
 #### YubiKey

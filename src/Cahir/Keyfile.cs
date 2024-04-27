@@ -13,6 +13,7 @@ public static class Keyfile
             Span<byte> buffer = GC.AllocateArray<byte>(4096, pinned: true);
             var ctx = new crypto_blake2b_ctx();
             crypto_blake2b_init(ref ctx, pepper.Length);
+            crypto_blake2b_update(ref ctx, "cahir.keyfile"u8);
             while ((bytesRead = fileStream.Read(buffer)) > 0) {
                 crypto_blake2b_update(ref ctx, buffer[..bytesRead]);
             }
