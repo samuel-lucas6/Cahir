@@ -10,7 +10,7 @@ public static class Generator
         Span<byte> salt = stackalloc byte[Constants.SaltSize];
         var ctx = new crypto_blake2b_ctx();
         crypto_blake2b_init(ref ctx, salt.Length);
-        crypto_blake2b_update(ref ctx, "cahir.masterkey"u8);
+        crypto_blake2b_update(ref ctx, "cahir.salt"u8);
         crypto_blake2b_update(ref ctx, identity);
         crypto_blake2b_final(ref ctx, salt);
 
