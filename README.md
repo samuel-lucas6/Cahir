@@ -200,7 +200,7 @@ for i = 0 to wordCount
         count++
 ```
 - `plaintext`: an all-zero buffer (`-l, --length` * 16 bytes or (`-l, --length` + 2) * 16 bytes if `-n, --numbers`).
-- `nonce`: the UTF-8 encoding of `"cahir.sitepw"` (12 bytes).
+- `nonce`: the UTF-8 encoding of `"cahir.sitepp"` (12 bytes).
 - `key`: the `siteKey` from site key derivation (32 bytes).
 - `counter`: an unsigned 32-bit integer equal to 0.
 - `randomNumber`: an unsigned 128-bit integer converted to a signed 32-bit integer.

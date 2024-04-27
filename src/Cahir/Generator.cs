@@ -89,7 +89,7 @@ public static class Generator
         int offset = number ? 2 : 0;
         Span<byte> ciphertext = stackalloc byte[(wordCount + offset) * Constants.UInt128Size];
         ciphertext.Clear();
-        ReadOnlySpan<byte> nonce = "cahir.sitepw"u8;
+        ReadOnlySpan<byte> nonce = "cahir.sitepp"u8;
         crypto_chacha20_ietf(ciphertext, ciphertext, siteKey, nonce, ctr: 0);
 
         ReadOnlySpan<char> characterSet = "0123456789";
