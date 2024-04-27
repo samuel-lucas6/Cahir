@@ -51,7 +51,7 @@ OPTIONS:
 - Derived site passwords should be completely different when derivation parameters change.
 - Sensitive data should be wiped from memory after use.
 - It should be possible to enter the master password without revealing the typed characters.
-- It should be possible to enter a YubiKey access code without revealing the typed characters.
+- It should be possible to enter a YubiKey slot access code without revealing the typed characters.
 
 ### Threat Model
 Cahir aims for security against an adversary who does not have physical or remote access to the user's machine. With such access, security cannot be guaranteed because the adversary has compromised the device. For example, they can use hardware/software keyloggers, memory forensics, disk forensics, and so on. However, Cahir attempts to zero sensitive data to minimise the risk of retrieval from memory or disk.
@@ -102,7 +102,7 @@ pepper = BLAKE2b-256(keyfile)
 
 #### YubiKey
 ```
-challenge = BLAKE2b-512(key: masterKey, message: context || counter || length || characterSet || domain)
+challenge = BLAKE2b-256(key: masterKey, message: context || counter || length || characterSet || domain)
 ```
 - `masterKey`: the key from master key derivation (32 bytes).
 - `context`: the UTF-8 encoding of `"cahir.challenge"` (15 bytes).
@@ -112,11 +112,12 @@ challenge = BLAKE2b-512(key: masterKey, message: context || counter || length ||
 - `domain`: the UTF-8 encoding of the `-d, --domain` string (1+ bytes).
 
 ```
-response = HMAC-SHA1(key: yubikeySecret, message: challenge)
+response = HMAC-SHA1(key: yubikeySecret, message: challenge || padding)
 pepper = BLAKE2b-256(key: response, message: context)
 ```
 - `yubikeySecret`: the secret key stored on the YubiKey in an OTP slot (20 bytes).
-- `challenge`: the challenge derived above (64 bytes).
+- `challenge`: the challenge derived above (32 bytes).
+- `padding`: an all-zero buffer (32 bytes).
 - `response`: the HMAC-SHA1 output (20 bytes).
 - `context`: the UTF-8 encoding of `"cahir.response"` (14 bytes).
 

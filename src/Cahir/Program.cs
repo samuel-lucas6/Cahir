@@ -247,7 +247,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         if (settings.YubiKey) {
             AnsiConsole.MarkupLine("[darkorange3_1]Performing YubiKey challenge-response...[/]");
             var challenge = GC.AllocateArray<byte>(CalculateChallengeResponse.MaxHmacChallengeSize, pinned: true);
-            Generator.DeriveChallenge(challenge, masterKey, domain, counter, length, characterSet);
+            Generator.DeriveChallenge(challenge.AsSpan()[..Constants.KeySize], masterKey, domain, counter, length, characterSet);
             YubiKey.ChallengeResponse(pepper, challenge);
             crypto_wipe(challenge);
         }
