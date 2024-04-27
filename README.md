@@ -39,6 +39,7 @@ OPTIONS:
 - It should be difficult to brute force a master password.
 - It should be computationally infeasible to brute force a pepper.
 - It should not be possible to compromise the YubiKey secret key after generation.
+- It should not be possible to overwrite the YubiKey slot without the access code.
 - It should not be possible to perform YubiKey challenge-response without physical touch.
 - A compromise of the master password, but not the pepper, should not allow derivation of site passwords.
 - A compromise of the pepper, but not the master password, should not allow derivation of site passwords.
@@ -50,7 +51,7 @@ OPTIONS:
 - Derived site passwords should be completely different when derivation parameters change.
 - Sensitive data should be wiped from memory after use.
 - It should be possible to enter the master password without revealing the typed characters.
-- The interactive master password entry fingerprint should not leak the master password.
+- It should be possible to enter a YubiKey access code without revealing the typed characters.
 
 ### Threat Model
 Cahir aims for security against an adversary who does not have physical or remote access to the user's machine. With such access, security cannot be guaranteed because the adversary has compromised the device. For example, they can use hardware/software keyloggers, memory forensics, disk forensics, and so on. However, Cahir attempts to zero sensitive data to minimise the risk of retrieval from memory or disk.
@@ -103,11 +104,11 @@ pepper = BLAKE2b-256(keyfile)
 ```
 challenge = BLAKE2b-512(key: masterKey, message: context || counter || length || characterSet || domain)
 ```
-- `key`: the `masterKey` from master key derivation (32 bytes).
+- `masterKey`: the key from master key derivation (32 bytes).
 - `context`: the UTF-8 encoding of `"cahir.challenge"` (15 bytes).
 - `counter`: the little-endian encoding of the unsigned 32-bit `-c, --counter` integer (4 bytes).
 - `length`: the little-endian encoding of the unsigned 32-bit `-l, --length` integer (4 bytes).
-- `characterSet`: a single `0x01` or `0x00` (representing true or false respectively) for `-a, --lowercase`, `-u, --uppercase`, `-n, --numbers`, `-s, --symbols`, and `-w, --words` in that order (5 bytes).
+- `characterSet`: a single `0x01` or `0x00` byte (representing true or false respectively) for `-a, --lowercase`, `-u, --uppercase`, `-n, --numbers`, `-s, --symbols`, and `-w, --words` in that order (5 bytes).
 - `domain`: the UTF-8 encoding of the `-d, --domain` string (1+ bytes).
 
 ```
@@ -116,7 +117,7 @@ pepper = BLAKE2b-256(key: response, message: context)
 ```
 - `yubikeySecret`: the secret key stored on the YubiKey in an OTP slot (20 bytes).
 - `challenge`: the challenge derived above (64 bytes).
-- `response`: the HMAC-SHA1 response (20 bytes).
+- `response`: the HMAC-SHA1 output (20 bytes).
 - `context`: the UTF-8 encoding of `"cahir.response"` (14 bytes).
 
 ### Site Key Derivation
@@ -127,7 +128,7 @@ siteKey = BLAKE2b-256(key, message: context || counter || length || characterSet
 - `context`: the UTF-8 encoding of `"cahir.sitekey"` (13 bytes).
 - `counter`: the little-endian encoding of the unsigned 32-bit `-c, --counter` integer (4 bytes).
 - `length`: the little-endian encoding of the unsigned 32-bit `-l, --length` integer (4 bytes).
-- `characterSet`: a single `0x01` or `0x00` (representing true or false respectively) for `-a, --lowercase`, `-u, --uppercase`, `-n, --numbers`, `-s, --symbols`, and `-w, --words` in that order (5 bytes).
+- `characterSet`: a single `0x01` or `0x00` byte (representing true or false respectively) for `-a, --lowercase`, `-u, --uppercase`, `-n, --numbers`, `-s, --symbols`, and `-w, --words` in that order (5 bytes).
 - `domain`: the UTF-8 encoding of the `-d, --domain` string (1+ bytes).
 
 ### Site Password Derivation
@@ -153,7 +154,7 @@ for i = 0 to length
 - `plaintext`: an all-zero buffer (`-l, --length` * 16 bytes).
 - `nonce`: the UTF-8 encoding of `"cahir.sitepw"` (12 bytes).
 - `key`: the `siteKey` from site key derivation (32 bytes).
-- `counter`: set to 0.
+- `counter`: an unsigned 32-bit integer equal to 0.
 - `lowercase`: whether `-a, --lowercase` was specified.
 - `uppercase`: whether `-u, --uppercase` was specified.
 - `numbers`: whether `-n, --numbers` was specified.
@@ -198,14 +199,14 @@ for i = 0 to wordCount
             sitePassphrase[count] = " "
         count++
 ```
-- `plaintext`: an all-zero buffer (`-l, --length` * 16 bytes or (`-l, --length` * 16) + 2 bytes if `-n, --numbers`).
+- `plaintext`: an all-zero buffer (`-l, --length` * 16 bytes or (`-l, --length` + 2) * 16 bytes if `-n, --numbers`).
 - `nonce`: the UTF-8 encoding of `"cahir.sitepw"` (12 bytes).
 - `key`: the `siteKey` from site key derivation (32 bytes).
-- `counter`: set to 0.
+- `counter`: an unsigned 32-bit integer equal to 0.
 - `randomNumber`: an unsigned 128-bit integer converted to a signed 32-bit integer.
 - `randomPosition`: an unsigned 128-bit integer converted to a signed 32-bit integer.
 - `wordCount`: the `-l, --length` integer.
-- `wordlist`: the [BIP39 English wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md) split by newline.
+- `wordlist`: a string array created by splitting the [BIP39 English wordlist](https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md) by newline.
 - `randomIndex`: an unsigned 128-bit integer converted to a signed 32-bit integer.
 - `uppercase`: whether `-u, --uppercase` was specified.
 - `numbers`: whether `-n, --numbers` was specified.
