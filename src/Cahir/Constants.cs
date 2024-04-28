@@ -10,7 +10,6 @@ public static class Constants
     public const int MaxWords = 12;
     public const int LongestWordLength = 8;
     public const int KeySize = 32;
-    public const int FingerprintSize = 64;
     public const int SaltSize = 32;
     public const int CRYPTO_ARGON2_ID = 2;
     public const int Argon2MemorySize = 536870912; // 512 MiB

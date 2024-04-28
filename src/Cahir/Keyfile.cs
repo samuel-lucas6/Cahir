@@ -28,9 +28,9 @@ public static class Keyfile
     public static void GenerateKeyfile(string path)
     {
         try {
+            using var fileStream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             Span<byte> pepper = stackalloc byte[Constants.KeySize];
             RandomNumberGenerator.Fill(pepper);
-            using var fileStream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             fileStream.Write(pepper);
             crypto_wipe(pepper);
             File.SetAttributes(path, FileAttributes.ReadOnly);

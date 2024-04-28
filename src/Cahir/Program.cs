@@ -225,6 +225,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         else {
             passwordLength = PasswordEntry.GetPassword(passwordBuffer);
         }
+
         Span<byte> password = passwordBuffer[..passwordLength];
         Span<byte> length = stackalloc byte[sizeof(uint)];
         BinaryPrimitives.WriteUInt32LittleEndian(length, (uint)settings.Length!);
@@ -237,7 +238,13 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Span<byte> counter = stackalloc byte[sizeof(uint)];
         BinaryPrimitives.WriteUInt32LittleEndian(counter, (uint)settings.Counter!);
         if (settings.Keyfile != null) {
-            Keyfile.ReadKeyfile(pepper, settings.Keyfile);
+            try {
+                Keyfile.ReadKeyfile(pepper, settings.Keyfile);
+            }
+            catch (Exception) {
+                crypto_wipe(password);
+                throw;
+            }
         }
 
         AnsiConsole.MarkupLine("[darkorange3_1]Deriving keys from master password...[/]");
@@ -247,9 +254,16 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         if (settings.YubiKey) {
             AnsiConsole.MarkupLine("[darkorange3_1]Performing YubiKey challenge-response...[/]");
             var challenge = GC.AllocateArray<byte>(CalculateChallengeResponse.MaxHmacChallengeSize, pinned: true);
-            Generator.DeriveChallenge(challenge.AsSpan()[..Constants.KeySize], masterKey, domain, counter, length, characterSet);
-            YubiKey.ChallengeResponse(pepper, challenge);
-            crypto_wipe(challenge);
+            try {
+                Generator.DeriveChallenge(challenge.AsSpan()[..Constants.KeySize], masterKey, domain, counter, length, characterSet);
+                YubiKey.ChallengeResponse(pepper, challenge);
+                crypto_wipe(challenge);
+            }
+            catch (Exception) {
+                crypto_wipe(masterKeyAndPepper);
+                crypto_wipe(challenge);
+                throw;
+            }
         }
 
         Generator.DeriveSiteKey(siteKey, settings.Keyfile != null || settings.YubiKey ? masterKeyAndPepper : masterKey, domain, counter, length, characterSet);
@@ -265,6 +279,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 Generator.DeriveSitePassphrase(sitePassword, siteKey, settings.Length.Value, settings.Uppercase, settings.Numbers, settings.Symbols);
             }
             crypto_wipe(siteKey);
+
             Console.WriteLine();
             AnsiConsole.MarkupLine("[green3_1]-----BEGIN SITE PASSWORD-----[/]");
             foreach (char c in sitePassword) {

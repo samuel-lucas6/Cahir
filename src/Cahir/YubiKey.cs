@@ -14,9 +14,6 @@ public static class YubiKey
     public static unsafe void ConfigureSlot()
     {
         IYubiKeyDevice yubiKey = GetYubiKey();
-        var key = GC.AllocateArray<byte>(ConfigureChallengeResponse.HmacSha1KeySize, pinned: true);
-        RandomNumberGenerator.Fill(key);
-
         AnsiConsole.MarkupLine("[darkorange3_1]Warning: This will overwrite the chosen YubiKey OTP slot. Press Ctrl+C to cancel.[/]");
         Console.WriteLine();
         Console.WriteLine("Checking slots...");
@@ -41,28 +38,32 @@ public static class YubiKey
         GetAccessCode(currentAccessCode, currentAccessCode: true);
         GetAccessCode(newAccessCode, currentAccessCode: false);
 
+        var key = GC.AllocateArray<byte>(ConfigureChallengeResponse.HmacSha1KeySize, pinned: true);
+        RandomNumberGenerator.Fill(key);
         try {
             session.ConfigureChallengeResponse((Slot)slot).UseHmacSha1().UseKey(key).UseButton()
                 .UseCurrentAccessCode(new SlotAccessCode(currentAccessCode))
                 .SetNewAccessCode(new SlotAccessCode(newAccessCode)).Execute();
-            string hexKey = Convert.ToHexString(key).ToLower();
+            crypto_wipe(currentAccessCode);
+            crypto_wipe(newAccessCode);
+            string hexKey = Convert.ToHexString(key);
             fixed (char* h = hexKey) {
+                crypto_wipe(key);
                 AnsiConsole.MarkupLine("[darkorange3_1]Warning: If you get another YubiKey, use YubiKey Manager to configure a slot with this hex key (press Enter when you're done writing it down):[/]");
-                Console.Write(hexKey);
+                foreach (char c in hexKey) {
+                    Console.Write(char.ToLower(c));
+                }
+                crypto_wipe(new IntPtr(h), hexKey.Length * sizeof(char));
                 Console.ReadKey();
                 Console.Write($"\r{new string(' ', Console.BufferWidth)}\r");
                 Console.WriteLine();
-                // Pretty useless wipe here due to string copies
-                crypto_wipe(new IntPtr(h), hexKey.Length * sizeof(char));
             }
         }
         catch (InvalidOperationException ex) {
-            throw new ArgumentException("Wrong slot access code.", ex);
-        }
-        finally {
             crypto_wipe(key);
             crypto_wipe(currentAccessCode);
             crypto_wipe(newAccessCode);
+            throw new ArgumentException("Wrong slot access code.", ex);
         }
     }
 

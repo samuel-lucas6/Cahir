@@ -16,6 +16,7 @@ public static class PasswordEntry
                 pressedKey = Console.ReadKey(intercept: true);
                 if(!char.IsControl(pressedKey.KeyChar)) {
                     if (count > Constants.MaxPasswordChars - 1) {
+                        crypto_wipe(new IntPtr(p), password.Length * sizeof(char));
                         throw new ArgumentException($"The password must be at most {Constants.MaxPasswordChars} characters long.");
                     }
                     password[count] = pressedKey.KeyChar;
