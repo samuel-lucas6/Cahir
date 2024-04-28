@@ -123,10 +123,11 @@ public static class YubiKey
             ConsoleKeyInfo pressedKey;
             do {
                 pressedKey = Console.ReadKey(intercept: true);
-                if (count >= SlotAccessCode.MaxAccessCodeLength) {
-                    throw new ArgumentException($"The slot access code must be at most {SlotAccessCode.MaxAccessCodeLength} characters long.");
-                }
                 if(!char.IsControl(pressedKey.KeyChar)) {
+                    if (count > SlotAccessCode.MaxAccessCodeLength - 1) {
+                        crypto_wipe(new IntPtr(c), code.Length * sizeof(char));
+                        throw new ArgumentException($"The slot access code must be at most {SlotAccessCode.MaxAccessCodeLength} characters long.");
+                    }
                     code[count] = pressedKey.KeyChar;
                     count++;
                 }
