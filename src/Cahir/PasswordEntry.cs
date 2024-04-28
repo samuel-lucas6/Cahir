@@ -14,10 +14,10 @@ public static class PasswordEntry
             ConsoleKeyInfo pressedKey;
             do {
                 pressedKey = Console.ReadKey(intercept: true);
-                if (count >= Constants.MaxPasswordChars) {
-                    throw new ArgumentException($"The password must be at most {Constants.MaxPasswordChars} characters long.");
-                }
                 if(!char.IsControl(pressedKey.KeyChar)) {
+                    if (count > Constants.MaxPasswordChars - 1) {
+                        throw new ArgumentException($"The password must be at most {Constants.MaxPasswordChars} characters long.");
+                    }
                     password[count] = pressedKey.KeyChar;
                     count++;
                 }
