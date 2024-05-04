@@ -11,7 +11,7 @@ namespace Cahir;
 
 public static class YubiKey
 {
-    public static unsafe void ConfigureSlot()
+    public static unsafe void ConfigureSlot(int slot)
     {
         IYubiKeyDevice yubiKey = GetYubiKey();
         AnsiConsole.MarkupLine("[darkorange3_1]Warning: This will overwrite the chosen YubiKey OTP slot. Press Ctrl+C to cancel.[/]");
@@ -28,9 +28,11 @@ public static class YubiKey
             AnsiConsole.MarkupLine("[green3_1]Neither slot is already configured.[/]");
         }
         Console.WriteLine();
-        Console.WriteLine("Enter the slot for challenge-response (type 1 or 2):");
-        if (!int.TryParse(Console.ReadLine(), out int slot) || (slot != 1 && slot != 2)) {
-            throw new ArgumentException("You didn't enter a valid slot.");
+        if (slot == 0) {
+            Console.WriteLine("Enter the slot for challenge-response (type 1 or 2):");
+            if (!int.TryParse(Console.ReadLine(), out slot) || (slot != 1 && slot != 2)) {
+                throw new ArgumentException("You didn't enter a valid slot.");
+            }
         }
 
         var currentAccessCode = GC.AllocateArray<byte>(SlotAccessCode.MaxAccessCodeLength, pinned: true);
@@ -78,22 +80,15 @@ public static class YubiKey
         }
     }
 
-    public static void ChallengeResponse(Span<byte> pepper, byte[] challenge)
+    public static void ChallengeResponse(Span<byte> pepper, byte[] challenge, int slot)
     {
         try {
             IYubiKeyDevice yubiKey = GetYubiKey();
             using var session = new OtpSession(yubiKey);
             ReadOnlyMemory<byte> response;
-            // Try both OTP slots so the user doesn't have to remember the slot
-            try {
-                // UseYubiOtp(false) means use HMAC-SHA1
-                response = session.CalculateChallengeResponse(Slot.LongPress).UseYubiOtp(false).UseChallenge(challenge)
-                    .UseTouchNotifier(() => Console.WriteLine("Touch your YubiKey.")).GetDataBytes();
-            }
-            catch (KeyboardConnectionException) {
-                response = session.CalculateChallengeResponse(Slot.ShortPress).UseYubiOtp(false).UseChallenge(challenge)
-                    .UseTouchNotifier(() => Console.WriteLine("Touch your YubiKey.")).GetDataBytes();
-            }
+            // UseYubiOtp(false) means use HMAC-SHA1
+            response = session.CalculateChallengeResponse((Slot)slot).UseYubiOtp(false).UseChallenge(challenge)
+                .UseTouchNotifier(() => Console.WriteLine("Touch your YubiKey.")).GetDataBytes();
 
             // There seems to be no way to pin/wipe the response
             var ctx = new crypto_blake2b_ctx();
@@ -102,10 +97,10 @@ public static class YubiKey
             crypto_blake2b_final(ref ctx, pepper);
         }
         catch (KeyboardConnectionException ex) {
-            throw new ArgumentException("No challenge-response YubiKey slot found.", ex);
+            throw new ArgumentException($"Slot {slot} isn't configured for challenge-response.", ex);
         }
         catch (MalformedYubiKeyResponseException ex) {
-            throw new ArgumentException("You didn't press the YubiKey button.", ex);
+            throw new ArgumentException("You didn't touch your YubiKey.", ex);
         }
         catch (ApduException ex) {
             throw new ArgumentException("The OTP interface is disabled on your YubiKey.", ex);

@@ -8,6 +8,7 @@ public static class Constants
     public const int DefaultWords = 8;
     public const int MaxLength = 128;
     public const int MaxWords = 12;
+    public const int DefaultSlot = 2;
     public const int LongestWordLength = 8;
     public const int KeySize = 32;
     public const int SaltSize = 32;

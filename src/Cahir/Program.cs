@@ -53,13 +53,13 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         [Description("Randomly generate a keyfile with the specified file name")]
         public string? Generate { get; set; }
 
-        [CommandOption("-y|--yubikey")]
-        [Description("Use your YubiKey for challenge-response")]
-        public bool YubiKey { get; set; }
+        [CommandOption("-y|--yubikey [SLOT]")]
+        [Description("Use your YubiKey for challenge-response (defaults to slot 2)")]
+        public FlagValue<int?> YubiKey { get; set; }
 
-        [CommandOption("-m|--modify-slot")]
+        [CommandOption("-m|--modify-slot [SLOT]")]
         [Description("Set up a challenge-response YubiKey slot")]
-        public bool ModifySlot { get; set; }
+        public FlagValue<int?> ModifySlot { get; set; }
 
         [CommandOption("-c|--counter <COUNTER>")]
         [Description("The counter for when a site password needs to be changed (default is 1)")]
@@ -104,18 +104,22 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 return ValidationResult.Error("-g|--generate <FILE> must specify a valid file name.");
             }
             if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
-                settings.Keyfile != null || settings.YubiKey || settings.ModifySlot || settings.Counter != null || settings.Length != null ||
+                settings.Keyfile != null || settings.YubiKey.IsSet || settings.ModifySlot.IsSet || settings.Counter != null || settings.Length != null ||
                 settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
                 return ValidationResult.Error("-g|--generate <FILE> must be specified without other options.");
             }
             return ValidationResult.Success();
         }
-        if (settings.ModifySlot) {
+        if (settings.ModifySlot.IsSet) {
             if (settings.Identity != null || settings.Domain != null || settings.Password != null || settings.PasswordFile != null ||
-                settings.Keyfile != null || settings.YubiKey || settings.Generate != null || settings.Counter != null || settings.Length != null ||
+                settings.Keyfile != null || settings.YubiKey.IsSet || settings.Generate != null || settings.Counter != null || settings.Length != null ||
                 settings.Lowercase || settings.Uppercase || settings.Numbers || settings.Symbols || settings.Words) {
-                return ValidationResult.Error("-m|--modify-slot must be specified without other options.");
+                return ValidationResult.Error("-m|--modify-slot [SLOT] must be specified without other options.");
             }
+            if (settings.ModifySlot.Value != null && settings.ModifySlot.Value != 1 && settings.ModifySlot.Value != 2) {
+                return ValidationResult.Error("-m|--modify-slot [SLOT] must specify slot 1 or 2.");
+            }
+            settings.ModifySlot.Value ??= 0;
             return ValidationResult.Success();
         }
         if (string.IsNullOrWhiteSpace(settings.Identity)) {
@@ -148,8 +152,8 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             }
         }
         if (settings.Keyfile != null) {
-            if (settings.YubiKey) {
-                return ValidationResult.Error("-k|--keyfile <FILE> cannot be used alongside -y|--yubikey.");
+            if (settings.YubiKey.IsSet) {
+                return ValidationResult.Error("-k|--keyfile <FILE> cannot be used alongside -y|--yubikey [SLOT].");
             }
             if (!File.Exists(settings.Keyfile)) {
                 return ValidationResult.Error("The keyfile doesn't exist.");
@@ -162,6 +166,12 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             catch (Exception) {
                 return ValidationResult.Error("Unable to access the keyfile.");
             }
+        }
+        if (settings.YubiKey.IsSet) {
+            if (settings.YubiKey.Value != null && settings.YubiKey.Value != 1 && settings.YubiKey.Value != 2) {
+                return ValidationResult.Error("-y|--yubikey [SLOT] must specify slot 1 or 2.");
+            }
+            settings.YubiKey.Value ??= Constants.DefaultSlot;
         }
         settings.Counter ??= Constants.DefaultCounter;
         if (settings.Counter <= 0) {
@@ -199,8 +209,8 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             AnsiConsole.MarkupLine("[green3_1]Keyfile generated successfully.[/]");
             return Environment.ExitCode;
         }
-        if (settings.ModifySlot) {
-            YubiKey.ConfigureSlot();
+        if (settings.ModifySlot.IsSet) {
+            YubiKey.ConfigureSlot(settings.ModifySlot.Value!.Value);
             AnsiConsole.MarkupLine("[green3_1]Challenge-response slot configured successfully.[/]");
             return Environment.ExitCode;
         }
@@ -251,12 +261,12 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Generator.DeriveMasterKey(masterKey, identity, password);
         crypto_wipe(password);
 
-        if (settings.YubiKey) {
+        if (settings.YubiKey.IsSet) {
             AnsiConsole.MarkupLine("[darkorange3_1]Performing YubiKey challenge-response...[/]");
             var challenge = GC.AllocateArray<byte>(CalculateChallengeResponse.MaxHmacChallengeSize, pinned: true);
             try {
                 Generator.DeriveChallenge(challenge.AsSpan()[..Constants.KeySize], masterKey, domain, counter, length, characterSet);
-                YubiKey.ChallengeResponse(pepper, challenge);
+                YubiKey.ChallengeResponse(pepper, challenge, settings.YubiKey.Value!.Value);
                 crypto_wipe(challenge);
             }
             catch (Exception) {
@@ -266,7 +276,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
             }
         }
 
-        Generator.DeriveSiteKey(siteKey, settings.Keyfile != null || settings.YubiKey ? masterKeyAndPepper : masterKey, domain, counter, length, characterSet);
+        Generator.DeriveSiteKey(siteKey, settings.Keyfile != null || settings.YubiKey.IsSet ? masterKeyAndPepper : masterKey, domain, counter, length, characterSet);
         crypto_wipe(masterKeyAndPepper);
 
         // + settings.Length.Value for the word separator chars and a number
