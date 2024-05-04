@@ -54,7 +54,7 @@ OPTIONS:
 - It should be possible to enter a YubiKey slot access code without revealing the typed characters.
 
 ### Threat Model
-Cahir aims for security against an adversary who does not have physical or remote access to the user's machine. With such access, security cannot be guaranteed because the adversary has compromised the device. For example, they can use hardware/software keyloggers, memory forensics, disk forensics, and so on. However, Cahir attempts to zero sensitive data to minimise the risk of retrieval from memory or disk.
+Cahir aims for security against an adversary who does not have physical or remote access to the user's machine. With such access, security cannot be guaranteed because the adversary has compromised the device. For example, they can use hardware/software keyloggers, memory forensics, disk forensics, and so on. However, Cahir attempts to zero sensitive data to minimise the risk of retrieval from memory or disk, and there is some protection against shoulder surfing.
 
 To guess user inputs, the adversary must either perform:
 1. An online attack against a specific site, which should be hindered by rate limiting and Cahir's password hashing/pepper derivation.
