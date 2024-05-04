@@ -35,8 +35,19 @@ public static class YubiKey
 
         var currentAccessCode = GC.AllocateArray<byte>(SlotAccessCode.MaxAccessCodeLength, pinned: true);
         var newAccessCode = GC.AllocateArray<byte>(SlotAccessCode.MaxAccessCodeLength, pinned: true);
-        GetAccessCode(currentAccessCode, currentAccessCode: true);
-        GetAccessCode(newAccessCode, currentAccessCode: false);
+        GetAccessCode(currentAccessCode, "Enter your 6-digit slot access code (leave blank if there isn't one):");
+        GetAccessCode(newAccessCode, "Enter a new 6-digit slot access code (leave blank for no protection):");
+        if (!CryptographicOperations.FixedTimeEquals(newAccessCode, new byte[newAccessCode.Length])) {
+            Span<byte> retypedNewAccessCode = stackalloc byte[SlotAccessCode.MaxAccessCodeLength];
+            GetAccessCode(retypedNewAccessCode, "Retype your new slot access code:");
+            bool equal = CryptographicOperations.FixedTimeEquals(retypedNewAccessCode, newAccessCode);
+            crypto_wipe(retypedNewAccessCode);
+            if (!equal) {
+                crypto_wipe(currentAccessCode);
+                crypto_wipe(newAccessCode);
+                throw new ArgumentException("You didn't enter the same new slot access code.");
+            }
+        }
 
         var key = GC.AllocateArray<byte>(ConfigureChallengeResponse.HmacSha1KeySize, pinned: true);
         RandomNumberGenerator.Fill(key);
@@ -113,9 +124,9 @@ public static class YubiKey
         return yubiKeyList.First();
     }
 
-    private static unsafe void GetAccessCode(Span<byte> accessCode, bool currentAccessCode)
+    private static unsafe void GetAccessCode(Span<byte> accessCode, string message)
     {
-        Console.WriteLine(currentAccessCode ? "Enter your 6-digit slot access code (leave blank if there isn't one):" : "Enter a new 6-digit slot access code (leave blank for no protection):");
+        Console.WriteLine(message);
         int count = 0;
         Span<char> code = stackalloc char[SlotAccessCode.MaxAccessCodeLength];
         code.Clear();
