@@ -3,6 +3,18 @@ A deterministic password manager.
 
 ![cahir](https://github.com/samuel-lucas6/Cahir/assets/63159663/d182ba52-11db-415d-9abb-711a52687dae)
 
+## Installation
+On Windows, Linux, and macOS (x64 and ARM64), you can use the pre-built binaries:
+```
+https://github.com/samuel-lucas6/Cahir/releases
+```
+
+If your system has the [latest .NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0), you can build from source (replace `RID` with [your platform](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog#known-rids)):
+```
+$ cd src
+$ dotnet publish -r RID -c Release
+```
+
 ## Usage
 ```
 USAGE:
