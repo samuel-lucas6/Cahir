@@ -31,7 +31,7 @@
       <PackageReference Include="Monocypher" Version="0.4.1" />
       <PackageReference Include="Spectre.Console" Version="0.48.0" />
       <PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
-      <PackageReference Include="Yubico.YubiKey" Version="1.9.1" />
+      <PackageReference Include="Yubico.YubiKey" Version="1.10.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -54,5 +54,5 @@
     <ItemGroup>
         <TrimmerRootDescriptor Include="TrimmerRootDescriptor.xml" />
     </ItemGroup>
-    
+
 </Project>
