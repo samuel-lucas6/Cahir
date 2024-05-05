@@ -21,8 +21,8 @@ OPTIONS:
     -f, --password-file <FILE>    Your master password stored as a file (omit for interactive entry)
     -k, --keyfile <FILE>          Your pepper stored as a file
     -g, --generate <FILE>         Randomly generate a keyfile with the specified file name
-    -y, --yubikey                 Use your YubiKey for challenge-response
-    -m, --modify-slot             Set up a challenge-response YubiKey slot
+    -y, --yubikey [SLOT]          Use your YubiKey for challenge-response (defaults to slot 2)
+    -m, --modify-slot [SLOT]      Set up a challenge-response YubiKey slot
     -c, --counter <COUNTER>       The counter for when a site password needs to be changed (default is 1)
     -l, --length <LENGTH>         The length of the derived site password (default is 20 characters or 8 words)
     -a, --lowercase               Include lowercase characters in the derived site password
