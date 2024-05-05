@@ -12,7 +12,6 @@ public static class Program
 {
     public static int Main(string[] args)
     {
-        Console.OutputEncoding = Encoding.UTF8;
         var app = new CommandApp<CahirCommand>();
         app.Configure(config =>
         {
@@ -97,7 +96,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 return ValidationResult.Error("-g|--generate <FILE> must specify the name of a file.");
             }
             if (File.Exists(settings.Generate)) {
-                return ValidationResult.Error("-g|--generate <FILE> must specify a file that doesn't exist.");
+                return ValidationResult.Error("-g|--generate <FILE> must specify the name of a file that doesn't exist.");
             }
             var invalidChars = Path.GetInvalidFileNameChars();
             if (settings.Generate.Any(c => invalidChars.Contains(c))) {
@@ -143,8 +142,8 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
                 if (fileLength == 0) {
                     return ValidationResult.Error("The password file cannot be empty.");
                 }
-                if (fileLength > Encoding.UTF8.GetMaxByteCount(Constants.MaxPasswordChars)) {
-                    return ValidationResult.Error("The password file is too long.");
+                if (fileLength > Constants.MaxPasswordBytes) {
+                    return ValidationResult.Error($"The password file must be at most {Constants.MaxPasswordBytes} bytes long.");
                 }
             }
             catch (Exception) {
@@ -219,7 +218,7 @@ internal sealed class CahirCommand : Command<CahirCommand.Settings>
         Span<byte> siteKey = stackalloc byte[Constants.KeySize];
         Span<byte> identity = Encoding.UTF8.GetBytes(settings.Identity!);
         Span<byte> domain = Encoding.UTF8.GetBytes(settings.Domain!);
-        Span<byte> passwordBuffer = GC.AllocateArray<byte>(Encoding.UTF8.GetMaxByteCount(settings.Password?.Length ?? Constants.MaxPasswordChars), pinned: true);
+        Span<byte> passwordBuffer = GC.AllocateArray<byte>(Constants.MaxPasswordBytes, pinned: true);
         int passwordLength;
         if (settings.PasswordFile != null) {
             passwordLength = PasswordEntry.ReadPasswordFile(passwordBuffer, settings.PasswordFile);

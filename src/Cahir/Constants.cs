@@ -1,7 +1,10 @@
-﻿namespace Cahir;
+﻿using System.Text;
+
+namespace Cahir;
 
 public static class Constants
 {
+    public static readonly int MaxPasswordBytes = Encoding.UTF8.GetMaxByteCount(MaxPasswordChars);
     public const int MaxPasswordChars = 128;
     public const int DefaultCounter = 1;
     public const int DefaultLength = 20;
