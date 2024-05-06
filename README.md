@@ -1,7 +1,7 @@
 # Cahir
 A deterministic password manager.
 
-![cahir](https://github.com/samuel-lucas6/Cahir/assets/63159663/d182ba52-11db-415d-9abb-711a52687dae)
+![cahir](https://github.com/samuel-lucas6/Cahir/assets/63159663/4c8ac9f9-d8e2-4d0a-8ae2-0a036701cf7d)
 
 ## Installation
 On Windows, Linux, and macOS (x64 and ARM64), you can use the pre-built binaries:
