@@ -21,10 +21,10 @@ USAGE:
     cahir [OPTIONS]
 
 EXAMPLES:
-    cahir -i "alicejones@pm.me" -d "https://github.com"
-    cahir -i "alicejones@pm.me" -d "https://github.com" -p "correct horse battery staple"
-    cahir -i "+44 07488 855302" -d "https://github.com" -f "password.txt"
-    cahir -i "+44 07488 855302" -d "https://github.com" -k "pepper.key"
+    cahir -i "alicejones@pm.me" -d "github.com"
+    cahir -i "alicejones@pm.me" -d "github.com" -p "correct horse battery staple"
+    cahir -i "+44 07488 855302" -d "github.com" -f "password.txt"
+    cahir -i "+44 07488 855302" -d "github.com" -k "pepper.key"
 
 OPTIONS:
     -i, --identity <IDENTITY>     Your unique identifier (e.g. email address)
