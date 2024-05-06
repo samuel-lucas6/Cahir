@@ -97,10 +97,7 @@ public static class YubiKey
             crypto_blake2b_final(ref ctx, pepper);
         }
         catch (KeyboardConnectionException ex) {
-            throw new ArgumentException($"Slot {slot} isn't configured for challenge-response.", ex);
-        }
-        catch (MalformedYubiKeyResponseException ex) {
-            throw new ArgumentException("You didn't touch your YubiKey.", ex);
+            throw new ArgumentException(ex.Message.Contains("Timed out") ? "You didn't touch your YubiKey." : $"Slot {slot} isn't configured for challenge-response.", ex);
         }
         catch (ApduException ex) {
             throw new ArgumentException("The OTP interface is disabled on your YubiKey.", ex);
