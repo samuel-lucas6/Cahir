@@ -15,6 +15,11 @@ $ cd src
 $ dotnet publish -r RID -c Release
 ```
 
+If you try to use your YubiKey on Linux, you'll likely get an error mentioning `libudev.so`. To get things working, you must [create a symbolic link](https://docs.yubico.com/yesdk/users-manual/getting-started/running-on-linux.html#udev) from `libudev.so.1` to the directory .NET is using for Cahir. On Debian-based distros, the command will look something like this:
+```
+$ sudo ln -s /usr/lib/x86_64-linux-gnu/libudev.so.1 /home/samuel/.net/cahir/ftlSfb7AS_XKCtW7BksiMKLSs1L2dYc=/libudev.so
+```
+
 ## Usage
 ```
 USAGE:
