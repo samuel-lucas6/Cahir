@@ -106,7 +106,7 @@ masterKey = Argon2id(password, salt, memorySize, passes, parallelism)
 - `identity`: the UTF-8 encoding of the `-i, --identity` string (1+ bytes).
 - `password`: the UTF-8 encoding of the `-p, --password` or interactively entered password string, which cannot be empty and is limited to 128 characters, or the bytes stored in the `-f, --password-file` file (1-387 bytes).
 - `salt`: the salt derived above (32 bytes).
-- `memorySize`: 512 MiB.
+- `memorySize`: 256 MiB.
 - `passes`: 3 passes.
 - `parallelism`: 1 lane.
 
